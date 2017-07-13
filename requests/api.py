@@ -18,29 +18,29 @@ def request(method, url, **kwargs):
 
     :param method: method for the new :class:`Request` object.
     :param url: URL for the new :class:`Request` object.
-    :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
-    :param data: (optional) Dictionary or list of tuples ``[(key, value)]`` (will be form-encoded), bytes, or file-like object to send in the body of the :class:`Request`.
-    :param json: (optional) json data to send in the body of the :class:`Request`.
-    :param headers: (optional) Dictionary of HTTP Headers to send with the :class:`Request`.
+    :param params: (optional) 用于Request类的查询字符串，可以是dict或bytes
+    :param data: (optional) dict或二元组的list，``[(key, value)]`` (将会被编码为form-encoded)
+            bytes, or file-like object 存入body中发送
+    :param json: (optional) 将json存入body中发送
+    :param headers: (optional) HTTP请求头的字典
     :param cookies: (optional) Dict or CookieJar object to send with the :class:`Request`.
     :param files: (optional) Dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``) for multipart encoding upload.
         ``file-tuple`` can be a 2-tuple ``('filename', fileobj)``, 3-tuple ``('filename', fileobj, 'content_type')``
         or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``, where ``'content-type'`` is a string
         defining the content type of the given file and ``custom_headers`` a dict-like object containing additional headers
         to add for the file.
-    :param auth: (optional) Auth tuple to enable Basic/Digest/Custom HTTP Auth.
-    :param timeout: (optional) How many seconds to wait for the server to send data
-        before giving up, as a float, or a :ref:`(connect timeout, read
-        timeout) <timeouts>` tuple.
+    :param auth: (optional) 用于 基础/摘要/自定义auth的tuple
+    :param timeout: (optional) 等待服务器返回数据的时长（秒）
+        传入float或tuple, :ref:`(connect timeout, read timeout) <timeouts>` tuple.
     :type timeout: float or tuple
-    :param allow_redirects: (optional) Boolean. Enable/disable GET/OPTIONS/POST/PUT/PATCH/DELETE/HEAD redirection. Defaults to ``True``.
+    :param allow_redirects: (optional) Boolean. 开启 GET/OPTIONS/POST/PUT/PATCH/DELETE/HEAD 重定向. Defaults to ``True``.
     :type allow_redirects: bool
-    :param proxies: (optional) Dictionary mapping protocol to the URL of the proxy.
-    :param verify: (optional) Either a boolean, in which case it controls whether we verify
-            the server's TLS certificate, or a string, in which case it must be a path
-            to a CA bundle to use. Defaults to ``True``.
-    :param stream: (optional) if ``False``, the response content will be immediately downloaded.
-    :param cert: (optional) if String, path to ssl client cert file (.pem). If Tuple, ('cert', 'key') pair.
+    :param proxies: (optional) 使用字典将协议映射到代理的url
+    :param verify: (optional) boolean 是否验证服务器的TLS证书
+                              string  CA证书地址
+    :param stream: (optional) 若为False，响应内容会立即下载
+    :param cert: (optional) string SSL客户端证书文件的地址(.pem)
+                            tuple ('cert', 'key')
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
 
@@ -51,9 +51,7 @@ def request(method, url, **kwargs):
       <Response [200]>
     """
 
-    # By using the 'with' statement we are sure the session is closed, thus we
-    # avoid leaving sockets open which can trigger a ResourceWarning in some
-    # cases, and look like a memory leak in others.
+    # 通过使用with语句确保会话正确关闭，避免留下开启的socket，防止某些情况下的资源警告，如内存泄露
     with sessions.Session() as session:
         return session.request(method=method, url=url, **kwargs)
 
@@ -62,8 +60,8 @@ def get(url, params=None, **kwargs):
     r"""Sends a GET request.
 
     :param url: URL for the new :class:`Request` object.
-    :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
-    :param \*\*kwargs: Optional arguments that ``request`` takes.
+    :param params: (optional) 用于Request类的查询字符串，可以是dict或bytes
+    :param \*\*kwargs: 用于request的可选关键字参数
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """

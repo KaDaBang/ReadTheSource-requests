@@ -4,8 +4,7 @@
 requests.session
 ~~~~~~~~~~~~~~~~
 
-This module provides a Session object to manage and persist settings across
-requests (cookies, auth, proxies).
+改模块提供会话对象，用以管理并且保存requests的设置（如cookies, auth, proxies）
 """
 import os
 import platform
@@ -34,10 +33,10 @@ from .utils import (
 
 from .status_codes import codes
 
-# formerly defined here, reexposed here for backward compatibility
+# 之前的定义是写在此处的，在这里导入是为了向后兼容
 from .models import REDIRECT_STATI
 
-# Preferred clock, based on which one is more accurate on a given system.
+# 首选时钟，比系统给的clock更精确
 if platform.system() == 'Windows':
     try:  # Python 3.3+
         preferred_clock = time.perf_counter
@@ -48,9 +47,7 @@ else:
 
 
 def merge_setting(request_setting, session_setting, dict_class=OrderedDict):
-    """Determines appropriate setting for a given request, taking into account
-    the explicit setting on that request, and the setting in the session. If a
-    setting is a dictionary, they will be merged together using `dict_class`
+    """为request确定合适的设置，如果设置为dict，则使用dict_class对它们进行合并
     """
 
     if session_setting is None:
@@ -59,18 +56,18 @@ def merge_setting(request_setting, session_setting, dict_class=OrderedDict):
     if request_setting is None:
         return session_setting
 
-    # Bypass if not a dictionary (e.g. verify)
+    # 若二者有一个不可映射，则返回请求设置
     if not (
             isinstance(session_setting, Mapping) and
             isinstance(request_setting, Mapping)
     ):
         return request_setting
 
+    # 将Maping对象转为列表
     merged_setting = dict_class(to_key_val_list(session_setting))
     merged_setting.update(to_key_val_list(request_setting))
 
-    # Remove keys that are set to None. Extract keys first to avoid altering
-    # the dictionary during iteration.
+    # 移除值为空的键
     none_keys = [k for (k, v) in merged_setting.items() if v is None]
     for key in none_keys:
         del merged_setting[key]
@@ -79,10 +76,9 @@ def merge_setting(request_setting, session_setting, dict_class=OrderedDict):
 
 
 def merge_hooks(request_hooks, session_hooks, dict_class=OrderedDict):
-    """Properly merges both requests and session hooks.
+    """适当地合并请求和会话的钩子
 
-    This is necessary because when request_hooks == {'response': []}, the
-    merge breaks Session hooks entirely.
+    若request_hooks为[]，有可能导致session_hook奔溃
     """
     if session_hooks is None or session_hooks.get('response') == []:
         return request_hooks
@@ -96,15 +92,12 @@ def merge_hooks(request_hooks, session_hooks, dict_class=OrderedDict):
 class SessionRedirectMixin(object):
 
     def get_redirect_target(self, resp):
-        """Receives a Response. Returns a redirect URI or ``None``"""
+        """接收响应，返回重定向的uri或None"""
         if resp.is_redirect:
             location = resp.headers['location']
-            # Currently the underlying http module on py3 decode headers
-            # in latin1, but empirical evidence suggests that latin1 is very
-            # rarely used with non-ASCII characters in HTTP headers.
-            # It is more likely to get UTF8 header rather than latin1.
-            # This causes incorrect handling of UTF8 encoded location headers.
-            # To solve this, we re-encode the location in latin1.
+            # 当前py3编码的头优先使用latin1，但是经验上来说，在HTTP头中很少使用非ASCII的字符
+            # UTF8更加常用。因此，在处理UTF8编码的location头时可能出错
+            # 所以，我们重新将location编码为latin1
             if is_py3:
                 location = location.encode('latin1')
             return to_native_string(location, 'utf8')
