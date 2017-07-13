@@ -95,6 +95,7 @@ class SessionRedirectMixin(object):
         """接收响应，返回重定向的uri或None"""
         if resp.is_redirect:
             location = resp.headers['location']
+            # headers中的location保存了重定向的url
             # 当前py3编码的头优先使用latin1，但是经验上来说，在HTTP头中很少使用非ASCII的字符
             # UTF8更加常用。因此，在处理UTF8编码的location头时可能出错
             # 所以，我们重新将location编码为latin1
@@ -105,40 +106,41 @@ class SessionRedirectMixin(object):
 
     def resolve_redirects(self, resp, req, stream=False, timeout=None,
                           verify=True, cert=None, proxies=None, yield_requests=False, **adapter_kwargs):
-        """Receives a Response. Returns a generator of Responses or Requests."""
+        """接收响应，返回请求或响应的生成器"""
 
-        hist = []  # keep track of history
+        hist = []  # 追踪历史
 
         url = self.get_redirect_target(resp)
         while url:
             prepared_request = req.copy()
 
-            # Update history and keep track of redirects.
-            # resp.history must ignore the original request in this loop
+            # 更新历史并且保存重定向的踪迹
+            # resp.history必须忽略原始请求
             hist.append(resp)
             resp.history = hist[1:]
 
             try:
-                resp.content  # Consume socket so it can be released
+                resp.content  # 释放套接字
             except (ChunkedEncodingError, ContentDecodingError, RuntimeError):
                 resp.raw.read(decode_content=False)
 
+            # 重定向次数超过最大接受次数
             if len(resp.history) >= self.max_redirects:
                 raise TooManyRedirects('Exceeded %s redirects.' % self.max_redirects, response=resp)
 
-            # Release the connection back into the pool.
+            # 将连接释放回池
             resp.close()
 
-            # Handle redirection without scheme (see: RFC 1808 Section 4)
+            # 处理没有scheme的url
             if url.startswith('//'):
                 parsed_rurl = urlparse(resp.url)
                 url = '%s:%s' % (to_native_string(parsed_rurl.scheme), url)
 
-            # The scheme should be lower case...
+            # scheme必须小写
             parsed = urlparse(url)
             url = parsed.geturl()
 
-            # Facilitate relative 'location' headers, as allowed by RFC 7231.
+            # 处理location相关
             # (e.g. '/path/to/resource' instead of 'http://domain.tld/path/to/resource')
             # Compliant with RFC3986, we percent encode the url.
             if not parsed.netloc:

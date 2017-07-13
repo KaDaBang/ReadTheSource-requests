@@ -522,8 +522,9 @@ def unquote_unreserved(uri):
 
 
 def requote_uri(uri):
-    """Re-quote the given URI.
+    """重新引用传入的uri
 
+    该函数通过对传入的uri进行unquote/quote，来确保uri完整、一直地quote
     This function passes the given URI through an unquote/quote cycle to
     ensure that it is fully and consistently quoted.
 
