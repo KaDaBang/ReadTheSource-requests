@@ -498,14 +498,16 @@ UNRESERVED_SET = frozenset(
 
 
 def unquote_unreserved(uri):
-    """Un-escape any percent-escape sequences in a URI that are unreserved
-    characters. This leaves all reserved, illegal and non-ASCII bytes encoded.
+    """
+    逆转义任何在uri中为非保留字符的百分号序列
+    这样就保留了所有“保留”、“非保留”、“非ASCII字节编码”
 
     :rtype: str
     """
     parts = uri.split('%')
     for i in range(1, len(parts)):
         h = parts[i][0:2]
+        # 判断每个字符是否是字母数字
         if len(h) == 2 and h.isalnum():
             try:
                 c = chr(int(h, 16))
@@ -524,18 +526,14 @@ def unquote_unreserved(uri):
 def requote_uri(uri):
     """重新引用传入的uri
 
-    该函数通过对传入的uri进行unquote/quote，来确保uri完整、一直地quote
-    This function passes the given URI through an unquote/quote cycle to
-    ensure that it is fully and consistently quoted.
+    该函数通过对传入的uri进行转义、逆转义循环，来确保uri完整、确定地被转义
 
     :rtype: str
     """
-    safe_with_percent = "!#$%&'()*+,/:;=?@[]~"
-    safe_without_percent = "!#$&'()*+,/:;=?@[]~"
+    safe_with_percent = "!#$%&'()*+,/:;=?@[]~"  # 有百分号的安全字符
+    safe_without_percent = "!#$&'()*+,/:;=?@[]~" # 无百分号的安全字符
     try:
-        # Unquote only the unreserved characters
-        # Then quote only illegal characters (do not quote reserved,
-        # unreserved, or '%')
+        # 仅转义非保留字符，而后仅转义非法字符，不对保留字符、非保留字符或百分号进行转义
         return quote(unquote_unreserved(uri), safe=safe_with_percent)
     except InvalidURL:
         # We couldn't unquote the given URI, so let's try quoting it, but
@@ -733,7 +731,7 @@ def default_user_agent(name="python-requests"):
 
 def default_headers():
     """
-    :rtype: requests.structures.CaseInsensitiveDict
+    :rtype: requests.structures.CaseInsensitiveDict 大小写不敏感字典
     """
     return CaseInsensitiveDict({
         'User-Agent': default_user_agent(),

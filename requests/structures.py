@@ -13,7 +13,7 @@ from .compat import OrderedDict
 
 
 class CaseInsensitiveDict(collections.MutableMapping):
-    """A case-insensitive ``dict``-like object.
+    """类似dict的大小写不敏感的dict（键大小写不敏感）
 
     Implements all methods and operations of
     ``collections.MutableMapping`` as well as dict's ``copy``. Also

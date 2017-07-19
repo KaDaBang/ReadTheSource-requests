@@ -302,9 +302,9 @@ class SessionRedirectMixin(object):
 
 
 class Session(SessionRedirectMixin):
-    """A Requests session.
+    """一个请求会话
 
-    Provides cookie persistence, connection-pooling, and configuration.
+    提供cookie持久化，连接池，和配置
 
     Basic Usage::
 
@@ -328,12 +328,12 @@ class Session(SessionRedirectMixin):
 
     def __init__(self):
 
-        #: A case-insensitive dictionary of headers to be sent on each
+        #: 用于以下类的默认header，为大小写不敏感的dict
         #: :class:`Request <Request>` sent from this
         #: :class:`Session <Session>`.
         self.headers = default_headers()
 
-        #: Default Authentication tuple or object to attach to
+        #: 依附于Request的默认auth
         #: :class:`Request <Request>`.
         self.auth = None
 
@@ -342,41 +342,33 @@ class Session(SessionRedirectMixin):
         #: be used on each :class:`Request <Request>`.
         self.proxies = {}
 
-        #: Event-handling hooks.
+        #: 事件处理钩子
         self.hooks = default_hooks()
 
-        #: Dictionary of querystring data to attach to each
-        #: :class:`Request <Request>`. The dictionary values may be lists for
-        #: representing multivalued query parameters.
+        #: 依附于以下类的查询字符串字典, 字典值可能是代表多值查询的参数
+        #: :class:`Request <Request>`.
         self.params = {}
 
-        #: Stream response content default.
+        #: 默认stream响应内容
         self.stream = False
 
-        #: SSL Verification default.
+        #: 默认SSL验证
         self.verify = True
 
-        #: SSL client certificate default, if String, path to ssl client
-        #: cert file (.pem). If Tuple, ('cert', 'key') pair.
+        # 默认SSL客户端证书，如果是字符串，就是客户端证书的路径，如果是元组，则为('cert', 'key')
         self.cert = None
 
-        #: Maximum number of redirects allowed. If the request exceeds this
-        #: limit, a :class:`TooManyRedirects` exception is raised.
-        #: This defaults to requests.models.DEFAULT_REDIRECT_LIMIT, which is
-        #: 30.
+        # 重定向允许的最大数量，如果请求超过这个限制，则会抛出TooManyRedirects异常。
         self.max_redirects = DEFAULT_REDIRECT_LIMIT
 
-        #: Trust environment settings for proxy configuration, default
-        #: authentication and similar.
+        # 为代理配置信任环境配置，默认授权且相似
         self.trust_env = True
 
-        #: A CookieJar containing all currently outstanding cookies set on this
-        #: session. By default it is a
-        #: :class:`RequestsCookieJar <requests.cookies.RequestsCookieJar>`, but
-        #: may be any other ``cookielib.CookieJar`` compatible object.
+        # CookieJar包含该会话内当前所有显示的cookies，默认情况下是个RequestsCookieJar类，
+        # 但也可能是其他cookielib.CookieJar兼容类
         self.cookies = cookiejar_from_dict({})
 
-        # Default connection adapters.
+        # 默认连接适配器
         self.adapters = OrderedDict()
         self.mount('https://', HTTPAdapter())
         self.mount('http://', HTTPAdapter())
@@ -697,9 +689,10 @@ class Session(SessionRedirectMixin):
             v.close()
 
     def mount(self, prefix, adapter):
-        """Registers a connection adapter to a prefix.
+        """
+        将一个连接适配器注册给一个前缀
 
-        Adapters are sorted in descending order by key length.
+        适配器通过键的长度降序排序
         """
         self.adapters[prefix] = adapter
         keys_to_move = [k for k in self.adapters if len(k) < len(prefix)]

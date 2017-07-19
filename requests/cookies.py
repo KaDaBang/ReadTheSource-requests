@@ -145,7 +145,7 @@ def get_cookie_header(jar, request):
 
 
 def remove_cookie_by_name(cookiejar, name, domain=None, path=None):
-    """Unsets a cookie by name, by default over all domains and paths.
+    """通过cookie的名字来移除cookie，默认情况下覆盖所有域名和路径
 
     Wraps CookieJar.clear(), is O(n).
     """
@@ -170,27 +170,32 @@ class CookieConflictError(RuntimeError):
 
 
 class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
-    """Compatibility class; is a cookielib.CookieJar, but exposes a dict
-    interface.
+    """兼容类，是个CookieJar，但表示方式为dict
+
+    由于一些客户端可能期望使用response.cookies和session.cookies来支持字典操作，
+    所以在不为requests和sessions制定cookjar的情况下，我们将默认使用此类
 
     This is the CookieJar we create by default for requests and sessions that
     don't specify one, since some clients may expect response.cookies and
     session.cookies to support dict operations.
+
+    Requests不会使用自带的字典接口，这样是为了兼容外部的客户端代码。所有的代码应该在外部提供的CookieJar外工作，
+    如LWPCookieJar、FileCookieJar
 
     Requests does not use the dict interface internally; it's just for
     compatibility with external client code. All requests code should work
     out of the box with externally provided instances of ``CookieJar``, e.g.
     ``LWPCookieJar`` and ``FileCookieJar``.
 
+    与常规的CookieJar不同，这个类是可pickle的
     Unlike a regular CookieJar, this class is pickleable.
 
     .. warning:: dictionary operations that are normally O(1) may be O(n).
     """
 
     def get(self, name, default=None, domain=None, path=None):
-        """Dict-like get() that also supports optional domain and path args in
-        order to resolve naming collisions from using one cookie jar over
-        multiple domains.
+        """
+        dict-like 的get()也支持可选的domain和path参数，以此解决在多域名中使用单个cookiejar的命名冲突
 
         .. warning:: operation is O(n), not O(1).
         """
@@ -200,25 +205,25 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
             return default
 
     def set(self, name, value, **kwargs):
-        """Dict-like set() that also supports optional domain and path args in
-        order to resolve naming collisions from using one cookie jar over
-        multiple domains.
+        """Dict-like 的set()也支持可选的domain和path参数，以此解决在多域名中使用单个cookiejar的命名冲突
         """
-        # support client code that unsets cookies by assignment of a None value:
+        # 支持客户端代码使用为value赋值None来删除cookie
         if value is None:
             remove_cookie_by_name(self, name, domain=kwargs.get('domain'), path=kwargs.get('path'))
             return
 
         if isinstance(value, Morsel):
+            # 将morsel对象转为cookie
             c = morsel_to_cookie(value)
         else:
+            # 根据传入name和value创建cookie
             c = create_cookie(name, value, **kwargs)
         self.set_cookie(c)
         return c
 
     def iterkeys(self):
-        """Dict-like iterkeys() that returns an iterator of names of cookies
-        from the jar.
+        """
+        Dict-like 的iterkeys() ,返回一个cookie名字的迭代器
 
         .. seealso:: itervalues() and iteritems().
         """
@@ -226,7 +231,7 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
             yield cookie.name
 
     def keys(self):
-        """Dict-like keys() that returns a list of names of cookies from the
+        """Dict-like 的keys() 返回一个cookie名字的列表
         jar.
 
         .. seealso:: values() and items().
@@ -234,7 +239,7 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         return list(self.iterkeys())
 
     def itervalues(self):
-        """Dict-like itervalues() that returns an iterator of values of cookies
+        """Dict-like 的iterkeys() 返回一个cookie的迭代器
         from the jar.
 
         .. seealso:: iterkeys() and iteritems().
@@ -243,16 +248,14 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
             yield cookie.value
 
     def values(self):
-        """Dict-like values() that returns a list of values of cookies from the
-        jar.
+        """Dict-like values() 返回一个值的列表
 
         .. seealso:: keys() and items().
         """
         return list(self.itervalues())
 
     def iteritems(self):
-        """Dict-like iteritems() that returns an iterator of name-value tuples
-        from the jar.
+        """Dict-like iteritems() 返回一个键值对元组的迭代器
 
         .. seealso:: iterkeys() and itervalues().
         """
@@ -260,16 +263,15 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
             yield cookie.name, cookie.value
 
     def items(self):
-        """Dict-like items() that returns a list of name-value tuples from the
-        jar. Allows client-code to call ``dict(RequestsCookieJar)`` and get a
-        vanilla python dict of key value pairs.
+        """Dict-like items() 返回一个键值对元组的列表,
+        允许调用dict(RequestsCookieJar)来获得普通python的键值对字典
 
         .. seealso:: keys() and values().
         """
         return list(self.iteritems())
 
     def list_domains(self):
-        """Utility method to list all the domains in the jar."""
+        """获得jar中所有域名的列表"""
         domains = []
         for cookie in iter(self):
             if cookie.domain not in domains:
@@ -277,7 +279,7 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         return domains
 
     def list_paths(self):
-        """Utility method to list all the paths in the jar."""
+        """获得jar中所有路径"""
         paths = []
         for cookie in iter(self):
             if cookie.path not in paths:
@@ -285,8 +287,7 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         return paths
 
     def multiple_domains(self):
-        """Returns True if there are multiple domains in the jar.
-        Returns False otherwise.
+        """如果jar中有多个域名返回True，反之返回False
 
         :rtype: bool
         """
@@ -298,9 +299,8 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         return False  # there is only one domain in jar
 
     def get_dict(self, domain=None, path=None):
-        """Takes as an argument an optional domain and path and returns a plain
-        old Python dict of name-value pairs of cookies that meet the
-        requirements.
+        """
+        获得一个普通的python字典
 
         :rtype: dict
         """
@@ -320,18 +320,16 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
             return True
 
     def __getitem__(self, name):
-        """Dict-like __getitem__() for compatibility with client code. Throws
-        exception if there are more than one cookie with name. In that case,
-        use the more explicit get() method instead.
+        """Dict-like __getitem__()用于兼容客户代码的魔法方法
+        如果单个name有多个cookie，抛出异常，这种情况下，使用更加显示的get()方法
 
         .. warning:: operation is O(n), not O(1).
         """
         return self._find_no_duplicates(name)
 
     def __setitem__(self, name, value):
-        """Dict-like __setitem__ for compatibility with client code. Throws
-        exception if there is already a cookie of that name in the jar. In that
-        case, use the more explicit set() method instead.
+        """Dict-like __setitem__ 用于兼容客户代码
+        如果一个name下有了cookie，将抛出异常，在这种情况下，使用更加明确的set()方法
         """
         self.set(name, value)
 
@@ -375,15 +373,14 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         raise KeyError('name=%r, domain=%r, path=%r' % (name, domain, path))
 
     def _find_no_duplicates(self, name, domain=None, path=None):
-        """Both ``__get_item__`` and ``get`` call this function: it's never
-        used elsewhere in Requests.
+        """
+        __get_item__和get调用此函数，该函数不会用于Requests中其他地方
 
-        :param name: a string containing name of cookie
-        :param domain: (optional) string containing domain of cookie
-        :param path: (optional) string containing path of cookie
-        :raises KeyError: if cookie is not found
-        :raises CookieConflictError: if there are multiple cookies
-            that match name and optionally domain and path
+        :param name: 包含cookie名字的字符串
+        :param domain: (可选) 包含cookie域名的字符串
+        :param path: (optional) 包含路径的字符串
+        :raises KeyError: 若找不到cookie
+        :raises CookieConflictError: 如果有多个cookie匹配名字和可选域名、路径
         :return: cookie.value
         """
         toReturn = None
@@ -435,31 +432,33 @@ def _copy_cookie_jar(jar):
 
 
 def create_cookie(name, value, **kwargs):
-    """Make a cookie from underspecified parameters.
-
-    By default, the pair of `name` and `value` will be set for the domain ''
-    and sent on every request (this is sometimes called a "supercookie").
+    """
+    使用未知名的参数建立cookie
+    默认情况下，name和value将会被分配到空域名''下，并且发送到每一个请求（此cookie被称为supercookie）
     """
     result = dict(
         version=0,
         name=name,
         value=value,
         port=None,
-        domain='',
-        path='/',
-        secure=False,
-        expires=None,
-        discard=True,
+        domain='',          # 可将cookie限制在特定的域中，若没有制定域，就默认产生set-cookie响应的服务器主机名
+        path='/',           # 通过这个属性可以为服务器上特定的文档分配cookie
+        secure=False,       # 若为True，只在HTTP使用SSL时才会发送Cookie
+        expires=None,       # 日期字符串, 过期时间
+        discard=True,       # True为会话cookie，会话结束后（关闭浏览器），cookie便被删除
         comment=None,
         comment_url=None,
         rest={'HttpOnly': None},
-        rfc2109=False,)
+        rfc2109=False,      # False：cookie版本为0， True：cookie版本为1
+    )
 
+    # 若有多余的参数， 则抛出异常
     badargs = set(kwargs) - set(result)
     if badargs:
         err = 'create_cookie() got unexpected keyword arguments: %s'
         raise TypeError(err % list(badargs))
 
+    # 将传入参数映射到cookie字典中
     result.update(kwargs)
     result['port_specified'] = bool(result['port'])
     result['domain_specified'] = bool(result['domain'])
@@ -470,7 +469,7 @@ def create_cookie(name, value, **kwargs):
 
 
 def morsel_to_cookie(morsel):
-    """Convert a Morsel object into a Cookie containing the one k/v pair."""
+    """将Morsel类(cookie中每一项数据的属性的抽象类)转换为python的dict键值对形式"""
 
     expires = None
     if morsel['max-age']:
@@ -501,12 +500,12 @@ def morsel_to_cookie(morsel):
 
 
 def cookiejar_from_dict(cookie_dict, cookiejar=None, overwrite=True):
-    """Returns a CookieJar from a key/value dictionary.
+    """
+    利用传入的cookie_dict构造CookieJar类
 
-    :param cookie_dict: Dict of key/values to insert into CookieJar.
-    :param cookiejar: (optional) A cookiejar to add the cookies to.
-    :param overwrite: (optional) If False, will not replace cookies
-        already in the jar with new ones.
+    :param cookie_dict: 插入CookieJar的键值对
+    :param cookiejar: (optional) 加入到cookies的cookiejar
+    :param overwrite: (optional) 若为False，则不会用新的cookies代替已经存在jar中的cookies
     """
     if cookiejar is None:
         cookiejar = RequestsCookieJar()
